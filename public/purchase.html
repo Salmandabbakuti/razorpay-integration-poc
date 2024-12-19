@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase Plan</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 16px;
+      margin: 10px 0;
+    }
+
+    .price {
+      font-size: 20px;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Pro Plan Subscription</h1>
+    <p>Enjoy premium features including:</p>
+    <ul style="text-align: left; padding-left: 20px;">
+      <li>Unlimited website scans</li>
+      <li>Advanced analytics dashboard</li>
+      <li>Priority customer support</li>
+      <li>License valid for 1 year</li>
+    </ul>
+    <p class="price">₹5999 INR</p>
+    <button id="payNow" class="btn" onclick="payNow()">Pay Now</button>
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    async function payNow() {
+      // Create order by calling the server endpoint
+      const response = await fetch('/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: 5999, currency: 'INR', receipt: 'receipt#1983' })
+      });
+
+      const order = await response.json();
+      console.log("created order", order);
+      // Open Razorpay Checkout
+      const options = {
+        key: "rzp_test_qQtJjEmANYGZzQ", // Replace with your Razorpay key_id
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Your Company Name',
+        description: 'Test Transaction',
+        order_id: order.id, // This is the order_id created in the backend
+        callback_url: 'http://localhost:3000/payment-success', // Your success URL
+        prefill: {
+          name: 'Your Name',
+          email: 'your.email@example.com',
+          contact: '9999999999'
+        },
+        theme: {
+          color: '#F37254'
+        },
+        handler: function (response) {
+          fetch('/verify-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          }).then(res => res.json())
+            .then(data => {
+              if (data.status === 'ok') {
+                window.location.href = '/payment-success';
+              } else {
+                alert('Payment verification failed');
+              }
+            }).catch(error => {
+              console.error('Error:', error);
+              alert('Error verifying payment');
+            });
+        }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+  </script>
+</body>
+
+</html>

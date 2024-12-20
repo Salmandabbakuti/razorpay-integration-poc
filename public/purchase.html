@@ -2,8 +2,8 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Purchase Plan</title>
   <style>
     body {
@@ -65,7 +65,7 @@
   <div class="container">
     <h1>Pro Plan Subscription</h1>
     <p>Enjoy premium features including:</p>
-    <ul style="text-align: left; padding-left: 20px;">
+    <ul style="text-align: left; padding-left: 20px">
       <li>Unlimited website scans</li>
       <li>Advanced analytics dashboard</li>
       <li>Priority customer support</li>
@@ -79,54 +79,60 @@
   <script>
     async function payNow() {
       // Create order by calling the server endpoint
-      const response = await fetch('/create-order', {
-        method: 'POST',
+      const response = await fetch("/create-order", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ amount: 5999, currency: 'INR', receipt: 'receipt#1983' })
+        body: JSON.stringify({
+          amount: 5999,
+          currency: "INR",
+          receipt: "receipt#1983"
+        })
       });
 
       const order = await response.json();
-      console.log("created order", order);
+      console.log("created order from client", order);
       // Open Razorpay Checkout
       const options = {
         key: "rzp_test_qQtJjEmANYGZzQ", // Replace with your Razorpay key_id
         amount: order.amount,
         currency: order.currency,
-        name: 'Your Company Name',
-        description: 'Test Transaction',
+        name: "Your Company Name",
+        description: "Test Transaction",
         order_id: order.id, // This is the order_id created in the backend
-        callback_url: 'http://localhost:3000/payment-success', // Your success URL
+        callback_url: "http://localhost:3000/payment-success", // Your success URL
         prefill: {
-          name: 'Your Name',
-          email: 'your.email@example.com',
-          contact: '9999999999'
+          name: "Your Name",
+          email: "your.email@example.com",
+          contact: "9999999999"
         },
         theme: {
-          color: '#F37254'
+          color: "#F37254"
         },
         handler: function (response) {
-          fetch('/verify-payment', {
-            method: 'POST',
+          fetch("/verify-payment", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json'
+              "Content-Type": "application/json"
             },
             body: JSON.stringify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             })
-          }).then(res => res.json())
-            .then(data => {
-              if (data.status === 'ok') {
-                window.location.href = '/payment-success';
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.status === "ok") {
+                console.log("Payment verified successfully");
               } else {
-                alert('Payment verification failed');
+                alert("Payment verification failed");
               }
-            }).catch(error => {
-              console.error('Error:', error);
-              alert('Error verifying payment');
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Error verifying payment");
             });
         }
       };

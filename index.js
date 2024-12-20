@@ -139,6 +139,7 @@ app.post(
   async (req, res) => {
     console.log("Received webhook payload:", req.body);
     const signature = req.headers["x-razorpay-signature"];
+    console.log("Received webhook signature:", signature);
     const isValidSignature = validateSignature(
       req.rawBody,
       signature,

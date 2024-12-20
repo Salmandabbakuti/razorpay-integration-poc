@@ -98,17 +98,19 @@
         key: "rzp_test_qQtJjEmANYGZzQ", // Replace with your Razorpay key_id
         amount: order.amount,
         currency: order.currency,
-        name: "Your Company Name",
-        description: "Test Transaction",
+        name: "Acme Corp",
+        description: "Pro Plan Subscription",
+        image: "https://picsum.photos/200",
         order_id: order.id, // This is the order_id created in the backend
-        callback_url: "http://localhost:3000/payment-success", // Your success URL
+        // callback_url: "http://localhost:3000/verify-payment", // Your success URL, razorpay sends post request with (orderid, paymentid, signature) can be used to verify payment aswell
+        redirect: false, // This is important to prevent redirection to the success URL on failure
         prefill: {
-          name: "Your Name",
-          email: "your.email@example.com",
+          name: "John Doe",
+          email: "johndoe@acme.com",
           contact: "9999999999"
         },
         theme: {
-          color: "#F37254"
+          color: "#007bff"
         },
         handler: function (response) {
           fetch("/verify-payment", {
@@ -126,6 +128,7 @@
             .then((data) => {
               if (data.status === "ok") {
                 console.log("Payment verified successfully");
+                window.location.href = "/payment-success";
               } else {
                 alert("Payment verification failed");
               }

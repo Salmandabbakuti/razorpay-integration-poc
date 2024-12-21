@@ -14,7 +14,6 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + "/public"));
 
@@ -147,11 +146,12 @@ app.post("/payment-webhook", async (req, res) => {
     const { event, payload } = req.body;
     switch (event) {
       case "payment.captured":
+        console.log("Captured payment entity:", payload.payment.entity);
         const isPaymentVerified = handlePaymentVerification(
-          payload.order.entity.id,
+          payload.payment.entity.order_id,
           payload.payment.entity.id,
           "paid",
-          payload.order.entity.notes
+          payload.payment.entity.notes
         );
         if (isPaymentVerified) {
           console.log("Payment verification complete in webhook route");

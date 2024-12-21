@@ -13,15 +13,8 @@ const {
 const app = express();
 
 // Middleware
-app.use(express.json(
-  {
-    verify: (req, res, buf) => {
-      if (req.originalUrl.startsWith('/payment-webhook')) {
-        req.rawBody = buf.toString();
-      }
-    }
-  }
-));
+app.use(express.json());
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + "/public"));
 
@@ -56,7 +49,12 @@ const validateSignature = (body, signature, secret, type = "webhook") => {
 };
 
 // Generic payment verification handler
-const handlePaymentVerification = (orderId, paymentId, status = "paid", notes = []) => {
+const handlePaymentVerification = (
+  orderId,
+  paymentId,
+  status = "paid",
+  notes = []
+) => {
   console.log("Verifying payment:", orderId, paymentId, status, notes);
   const orders = readData();
   const order = orders.find((o) => o.order_id === orderId);
@@ -134,47 +132,44 @@ app.post("/verify-payment", async (req, res) => {
   }
 });
 
-app.post(
-  "/payment-webhook",
-  async (req, res) => {
-    console.log("Received webhook payload:", req.body);
-    const signature = req.headers["x-razorpay-signature"];
-    console.log("Received webhook signature:", signature);
-    const isValidSignature = validateSignature(
-      req.rawBody,
-      signature,
-      RAZORPAY_WEBHOOK_SECRET,
-      "webhook"
-    );
-    console.log("Signature verification status:", isValidSignature);
-    if (isValidSignature) {
-      const { event, payload } = req.body;
-      switch (event) {
-        case "payment.captured":
-          const isPaymentVerified = handlePaymentVerification(
-            payload.order.entity.id,
-            payload.payment.entity.id,
-            "paid",
-            payload.order.entity.notes
-          );
-          if (isPaymentVerified) {
-            console.log("Payment verification complete in webhook route");
-            res.status(200).json({ status: "ok" });
-          } else {
-            console.log("Payment verification failed in webhook route");
-            res.status(400).json({ status: "payment verification_failed" });
-          }
-          break;
-        default:
-          console.log("Unhandled webhook event:", event);
+app.post("/payment-webhook", async (req, res) => {
+  console.log("Received webhook payload:", req.body);
+  const signature = req.headers["x-razorpay-signature"];
+  console.log("Received webhook signature:", signature);
+  const isValidSignature = validateSignature(
+    req.body,
+    signature,
+    RAZORPAY_WEBHOOK_SECRET,
+    "webhook"
+  );
+  console.log("Signature verification status:", isValidSignature);
+  if (isValidSignature) {
+    const { event, payload } = req.body;
+    switch (event) {
+      case "payment.captured":
+        const isPaymentVerified = handlePaymentVerification(
+          payload.order.entity.id,
+          payload.payment.entity.id,
+          "paid",
+          payload.order.entity.notes
+        );
+        if (isPaymentVerified) {
+          console.log("Payment verification complete in webhook route");
           res.status(200).json({ status: "ok" });
-      }
-    } else {
-      console.log("Signature verification failed in webhook route");
-      res.status(400).json({ message: "signature verification_failed" });
+        } else {
+          console.log("Payment verification failed in webhook route");
+          res.status(400).json({ status: "payment verification_failed" });
+        }
+        break;
+      default:
+        console.log("Unhandled webhook event:", event);
+        res.status(200).json({ status: "ok" });
     }
+  } else {
+    console.log("Signature verification failed in webhook route");
+    res.status(400).json({ message: "signature verification_failed" });
   }
-);
+});
 
 app.get("/", (req, res) => res.send("Hello World"));
 app.get("/purchase", (req, res) =>

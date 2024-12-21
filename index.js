@@ -172,6 +172,10 @@ app.post("/payment-webhook", async (req, res) => {
 });
 
 app.get("/", (req, res) => res.send("Hello World"));
+app.get("/orders", (req, res) => {
+  const orders = readData();
+  res.status(200).json(orders);
+});
 app.get("/purchase", (req, res) =>
   res.sendFile(__dirname + "/public/purchase.html")
 );
